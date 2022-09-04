@@ -1,67 +1,58 @@
 import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import Todo from "./Components/Todo";
+import { addTodo, updateTodo, deleteTodo } from "./Redux/Actions";
 
-const loadTodo = () => {
-  let todos = JSON.parse(localStorage.getItem("todoList"));
-  if (todos) {
-    return todos;
-  } else {
-    return [];
-  }
-};
+import { saveTodos } from "./Helpers/LocalStorageOperations";
 
 const App = () => {
   const [todo, setTodo] = useState("");
-  const [todos, setTodos] = useState(loadTodo());
+  const [todoIndex, setTodoIndex] = useState("");
   const [edit, setEdit] = useState(false);
-  const [todoId, setTodoId] = useState("");
+
+  const TODOS = useSelector((state) => state);
+  const DISPATCH = useDispatch();
+
+  console.log(TODOS);
 
   useEffect(() => {
-    localStorage.setItem("todoList", JSON.stringify(todos));
-  }, [todos]);
+    saveTodos(TODOS);
+  }, [TODOS]);
 
-  const addTodo = () => {
-    setTodos((oldTodos) => [
-      ...oldTodos,
-      { todoName: todo, dateTime: new Date().toLocaleString() },
-    ]);
-    setTodo("");
-  };
-
-  const deleteTodo = (id) => {
-    setTodos(
-      todos.filter((value, index) => {
-        return index !== id;
+  const addNewTodo = () => {
+    DISPATCH(
+      addTodo({
+        id: Date.now(),
+        todoName: todo,
+        dateTime: new Date().toLocaleString(),
       })
     );
+    clearAll();
   };
 
-  const editTodo = (id) => {
-    todos.forEach((value, index) => {
-      if (index === id) {
+  const updateSelectedTodo = () => {
+    DISPATCH(updateTodo(todo, todoIndex));
+    clearAll();
+  };
+
+  const deleteSelectedTodo = (todoId) => {
+    DISPATCH(deleteTodo(todoId));
+  };
+
+  const editSelectedTodo = (todoId) => {
+    TODOS.forEach((todo, index) => {
+      if (todo.id === todoId) {
         setEdit(true);
-        setTodoId(id);
-        setTodo(value.todoName);
+        setTodo(todo.todoName);
+        setTodoIndex(index);
       }
     });
   };
 
-  const updateTodo = () => {
-    const newTodoList = todos.map((value, index) => {
-      if (index === todoId) {
-        return {
-          ...value,
-          todoName: todo,
-          dateTime: new Date().toLocaleString(),
-        };
-      }
-      return value;
-    });
-
-    setTodos(newTodoList);
-    setEdit(false);
-    setTodoId("");
+  const clearAll = () => {
     setTodo("");
+    setTodoIndex("");
+    setEdit(false);
   };
 
   return (
@@ -72,21 +63,22 @@ const App = () => {
         value={todo}
         onChange={(e) => setTodo(e.target.value)}
       />
-      <button onClick={edit ? updateTodo : addTodo}>
+      <button onClick={edit ? updateSelectedTodo : addNewTodo}>
         {edit ? "Update" : "Add"}
       </button>
+      <button onClick={clearAll}>Reset</button>
       <br />
       <br />
-      {todos?.map((todo, index) => {
-        const { todoName, dateTime } = todo;
+      {TODOS?.map((todo, index) => {
+        const { id, todoName, dateTime } = todo;
         return (
           <Todo
             key={index}
-            id={index}
+            id={id}
             todoName={todoName}
             dateTime={dateTime}
-            editFunc={editTodo}
-            deleteFunc={deleteTodo}
+            editFunc={editSelectedTodo}
+            deleteFunc={deleteSelectedTodo}
           />
         );
       })}
