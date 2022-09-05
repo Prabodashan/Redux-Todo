@@ -1,4 +1,4 @@
-# React 18 Starter Project
+# redux_todo_app
 
 ## Available Scripts
 
